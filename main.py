@@ -1,56 +1,138 @@
+import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.support import expected_conditions as EC
-
 from dotenv import load_dotenv
 import os
+
 
 load_dotenv()
 ROUTER_URL = os.getenv("ROUTER_URL", "http://192.168.29.1")
 USERNAME   = os.getenv("USERNAME")
 PASSWORD   = os.getenv("PASSWORD")
 
-def create_webdriver():
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--no-sandbox")
-    return webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()),
-        options=options
-    )
 
-def login_and_get_html(driver):
-    driver.get(ROUTER_URL)
 
-    #credentials filler
-    driver.find_element(By.NAME, "users.username").send_keys(USERNAME)
-    driver.find_element(By.NAME, "users.password").send_keys(PASSWORD)
-    driver.find_element(By.CSS_SELECTOR, "button.loginBtn").click()
+class JioRouterControls:
+    def __init__(self, USERNAME, PASSWORD, ROUTER_URL):
+        def create_webdriver():
+            options = Options()
+            options.add_argument("--headless=new") # dont use --headless args with this router it does not like it and result in error during navigation
+            options.add_argument("--disable-gpu")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--window-size=1920,1080")
+            return webdriver.Chrome(
+                service=Service(ChromeDriverManager().install()),
+                options=options
+            )
 
-    try:
-        # wait for 10 seconds to load
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "tf1_network_lanIPv4Config"))
-        )
-        login_status = "Login successful!"
-    except Exception:
-        login_status = "Login failed!"
+        self.driver = create_webdriver()
+        self.driver.get(ROUTER_URL)
+        self.USERNAME = USERNAME
+        self.PASSWORD = PASSWORD
+        self.ROUTER_URL = ROUTER_URL
 
-    #return page source
-    return login_status, driver.page_source
+    def login(self):
+        # Note: have to implement some function to check for forced dialog box that
+        # informs user if there is an active session that has not logged out
+
+        # Fill in credentials
+        self.driver.find_element(By.NAME, "users.username").send_keys(USERNAME)
+        self.driver.find_element(By.NAME, "users.password").send_keys(PASSWORD)
+        self.driver.find_element(By.CSS_SELECTOR, "button.loginBtn").click()
+
+        try:
+            # Wait for the LAN-IPv4 config tab to appear
+            WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.ID, "tf1_network_lanIPv4Config"))
+            )
+
+            print("Login successful!")
+
+        except Exception:
+            print("Login failed!")
+
+        # Get the current page source after login attempt to debug if needed or checking if logging in is successful manually
+        return self.driver.page_source
+
+    def NavigationtoMaintenance(self):
+        #Need this because going to tf1_administration_factoryDefault directly results in 401 because of some protection in router.
+        try:
+
+            # Click on "ADMINISTRATION" to reveal the submenu
+            WebDriverWait(self.driver, 10).until(
+                EC.element_to_be_clickable((By.ID, "mainMenu5"))
+            ).click()
+
+            # Click on "Maintenance"
+            WebDriverWait(self.driver, 10).until(
+                EC.element_to_be_clickable((By.ID, "tf1_administration_factoryDefault"))
+            ).click()
+
+            WebDriverWait(self.driver, 15).until(
+                EC.presence_of_element_located((By.NAME , "button.reboot.statusPage"))
+            )
+            print("Navigation to Maintenance page successful!")
+            time.sleep(10)
+        except Exception as e:
+            print(f"Navigation to Maintenance page failed!\n ${e}")
+            time.sleep(10)
+
+        return self.driver.page_source
+
+    def RebootRouter(self):
+        try:
+            # Clicking the reboot button using JS click in the console because usual way through EC.presence_of_element_located not worked
+            self.driver.execute_script('document.getElementsByName("button.reboot.statusPage")[0].click();')
+
+            # Wait for alert to appear
+            WebDriverWait(self.driver, 5).until(EC.alert_is_present())
+
+            # Switch to alert dialog and accept the alert
+            alert = self.driver.switch_to.alert
+            print(f"Alert Text: {alert.text}")
+            alert.accept()
+
+            print("Reboot confirmed via alert!")
+
+        except Exception as e:
+            print(f"Reboot failed: {e}")
+
+    def logout(self):
+        # yup this is the fastest way to log out without going through clicking buttons
+        try:
+            self.driver.execute_script("window.location.href = '?page=index.html'")
+            print("Logged out!")
+            time.sleep(5)
+        except Exception as e:
+            print("logout failed!", e)
+
+    def close(self):
+        self.driver.quit()
+
+
 
 if __name__ == "__main__":
-    drv = create_webdriver()
+    # For now this only reboots the router which is the original idea for why i want to create this
+    # because Jio Router Becomes unstable after some hours of working.
     try:
-        status, html = login_and_get_html(drv)
-        print(status)
-        print("="*40)
-        print(html[:])
+        controller = JioRouterControls(USERNAME, PASSWORD, ROUTER_URL)
+        LoginPageHtml = controller.login()
+        MaintenancePageHtml = controller.NavigationtoMaintenance()
+        controller.RebootRouter()
+
+    except Exception:
+        print(f"Entry Failed!")
+
     finally:
-        drv.quit()
+        controller.logout()
+        controller.close()
+
+
+

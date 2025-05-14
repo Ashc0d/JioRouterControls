@@ -5,7 +5,6 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
 import os
@@ -17,12 +16,11 @@ USERNAME   = os.getenv("USERNAME")
 PASSWORD   = os.getenv("PASSWORD")
 
 
-
 class JioRouterControls:
     def __init__(self, USERNAME, PASSWORD, ROUTER_URL):
         def create_webdriver():
             options = Options()
-            options.add_argument("--headless=new") # dont use --headless args with this router it does not like it and result in error during navigation
+            options.add_argument("--headless=new") # don't use --headless args with this router it does not like it and result in error during navigation
             options.add_argument("--disable-gpu")
             options.add_argument("--disable-dev-shm-usage")
             options.add_argument("--no-sandbox")
@@ -119,7 +117,7 @@ class JioRouterControls:
 
 
 if __name__ == "__main__":
-    # For now this only reboots the router which is the original idea for why i want to create this
+    # For now this only reboots the router which is the original idea for why I want to create this
     # because Jio Router Becomes unstable after some hours of working.
     try:
         controller = JioRouterControls(USERNAME, PASSWORD, ROUTER_URL)

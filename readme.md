@@ -1,7 +1,7 @@
 
 ## 📶 Jio Router Reboot Automation
 This script automates logging into your Jio router’s admin panel and reboots the device to ensure stability after long uptime sessions.
-(for now it does reboot. i can expand it, if i am in mood.)
+(for now it does reboot. I can expand it, if I am in mood.)
 
 ---
 
@@ -114,4 +114,26 @@ rm -rf .venv
 
 ---
 
-Let me know if you’d like a `Makefile` or script to automate `.venv` creation.
+### 📦 Build the Docker Image (For Headless deployment)
+
+```bash
+docker build -t jio-router-control .
+```
+### 🚀 Run the Container
+
+To run the container with environment variables:
+
+```bash
+docker run --rm \
+  -e USERNAME=your_router_username \
+  -e PASSWORD=your_router_password \
+  -e ROUTER_URL=http://192.168.29.1 \
+  jio-router-control
+```
+
+* `USERNAME`: Your router's login username
+* `PASSWORD`: Your router's login password
+* `ROUTER_URL`: The base URL of your router (e.g., `http://192.168.29.1`)
+
+---
+

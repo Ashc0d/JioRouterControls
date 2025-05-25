@@ -25,6 +25,9 @@ class JioRouterControls:
             options.add_argument("--disable-dev-shm-usage")
             options.add_argument("--no-sandbox")
             options.add_argument("--window-size=1920,1080")
+            options.add_argument("--force-device-scale-factor=1")
+            options.add_argument("--start-maximized")
+            options.add_argument("--remote-debugging-port=9222")  # Avoid DevToolsActivePort error
             return webdriver.Chrome(
                 service=Service(ChromeDriverManager().install()),
                 options=options
@@ -47,7 +50,7 @@ class JioRouterControls:
 
         try:
             # Wait for the LAN-IPv4 config tab to appear
-            WebDriverWait(self.driver, 10).until(
+            WebDriverWait(self.driver, 30).until(
                 EC.presence_of_element_located((By.ID, "tf1_network_lanIPv4Config"))
             )
 
@@ -64,7 +67,7 @@ class JioRouterControls:
         try:
 
             # Click on "ADMINISTRATION" to reveal the submenu
-            WebDriverWait(self.driver, 10).until(
+            WebDriverWait(self.driver, 20).until(
                 EC.element_to_be_clickable((By.ID, "mainMenu5"))
             ).click()
 
@@ -73,7 +76,7 @@ class JioRouterControls:
                 EC.element_to_be_clickable((By.ID, "tf1_administration_factoryDefault"))
             ).click()
 
-            WebDriverWait(self.driver, 15).until(
+            WebDriverWait(self.driver, 45).until(
                 EC.presence_of_element_located((By.NAME , "button.reboot.statusPage"))
             )
             print("Navigation to Maintenance page successful!")
@@ -119,18 +122,19 @@ class JioRouterControls:
 if __name__ == "__main__":
     # For now this only reboots the router which is the original idea for why I want to create this
     # because Jio Router Becomes unstable after some hours of working.
+    controller = None  # Ensure it's always defined
     try:
         controller = JioRouterControls(USERNAME, PASSWORD, ROUTER_URL)
         LoginPageHtml = controller.login()
         MaintenancePageHtml = controller.NavigationtoMaintenance()
         controller.RebootRouter()
 
-    except Exception:
-        print(f"Entry Failed!")
+    except Exception as e:
+        print(f"Entry Failed! \n {e}")
 
     finally:
-        controller.logout()
-        controller.close()
-
+        if controller is not None:
+            controller.logout()
+            controller.close()
 
 

@@ -8,6 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
 import os
+import datetime
 
 
 load_dotenv()
@@ -120,6 +121,8 @@ class JioRouterControls:
 
 
 if __name__ == "__main__":
+
+    print(f"\n\nStarted this script on {datetime.datetime.now()}")
     # For now this only reboots the router which is the original idea for why I want to create this
     # because Jio Router Becomes unstable after some hours of working.
     controller = None  # Ensure it's always defined

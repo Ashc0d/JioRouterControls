@@ -1,0 +1,22 @@
+name: Docker image building
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Build docker image
+        run: docker build -t ashc0d/jio-router-control:latest .
+
+      - name: Push image to Docker Hub
+        run: |
+          docker login -u ashc0d -p ${{ secrets.DOCKERHUB_TOKEN }}
+          docker push ashc0d/jio-router-control

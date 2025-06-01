@@ -1,0 +1,9 @@
+[Unit]
+Description=Run jio-router-control daily at 3 AM
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Unit=jio-router-control.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run jio-router-control Docker container
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/docker run --rm --env-file=/etc/jio-router.env -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro ashc0d/jio-router-control
+StandardOutput=append:/var/log/jio-router-control.log
+StandardError=append:/var/log/jio-router-control.log
